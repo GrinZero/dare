@@ -1,0 +1,36 @@
+{
+  "name": "@dare/web-sdk",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./dist/sdk.umd.js",
+  "module": "./dist/sdk.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:dev": "vitest",
+    "build": "vite build"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/sdk.mjs",
+      "require": "./dist/sdk.umd.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./dev": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "types": "./src/index.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "eslint": "^8.55.0",
+    "vite": "^5.0.10",
+    "vite-plugin-dts": "^3.7.0",
+    "vitest": "^1.1.0"
+  }
+}
