@@ -1,12 +1,13 @@
 import "./App.css";
-import { init, errorPlugin } from "@dare/web-sdk/dev";
+import { init, errorPlugin, reportPlugin } from "@dare/web-sdk/dev";
 
 init({
-  plugins: [errorPlugin({
-    onError: (error) => {
-      console.log("error", error);
-    }
-  })],
+  plugins: [
+    reportPlugin({
+      url: "http://localhost:3000/api/report",
+    }),
+    errorPlugin(),
+  ],
 });
 
 function App() {
