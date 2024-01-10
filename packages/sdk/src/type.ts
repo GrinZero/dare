@@ -1,25 +1,26 @@
+/* eslint-disable @typescript-eslint/ban-types */
 export type DareContext = {
   [key: string]: unknown;
   state: Record<string, unknown>;
   core: {
-    report: (msg: unknown) => unknown | Promise<unknown>;
+    report: (msg: unknown) => Promise<unknown>;
+    sendBean: (msg: unknown) => Promise<unknown> | unknown;
   };
 };
 
-type HasRequiredProps<T> = {
-  [K in keyof T]: Required<Pick<T, K>> extends Pick<T, K> ? true : false;
-}[keyof T] extends true
-  ? true
-  : false;
+type HasRequiredProps<T> = (keyof
+  { [K in keyof T as {} extends Pick<T, K> ? never : K]: T[K] }
+) extends never ? false : true
 
-type DarePluginMethods<R> = {
+type DarePluginInstance<R> = {
   before?: (context: DareContext) => R;
   main?: (context: DareContext) => R | (() => void);
+  priority?: "high" | "normal" | "low";
 };
 
 export type DarePlugin<
   Op extends object = object,
   R = unknown,
 > = HasRequiredProps<Op> extends true
-  ? (options: Op) => DarePluginMethods<R>
-  : (options?: Op) => DarePluginMethods<R>;
+  ? (options: Op) => DarePluginInstance<R>
+  : (options?: Op) => DarePluginInstance<R>;

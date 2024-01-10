@@ -14,8 +14,11 @@ const initOptions = (): InitOptions => ({
   context: {
     state: {},
     core: {
-      report: () => {
+      report: async () => {
         console.warn("report is not init");
+      },
+      sendBean: () => {
+        console.warn("sendBean is not init");
       },
     },
   },
@@ -33,19 +36,37 @@ export const init = (options: Omit<InitOptions, "context">) => {
   globalOptions = initOptions();
   Object.assign(globalOptions, options);
 
-  const beforeHooks = globalOptions.plugins.map((plugin) => plugin.before);
-  beforeHooks.forEach((beforeFn) => {
-    beforeFn && beforeFn(globalOptions.context);
-  });
+  const highPriorityPlugins = globalOptions.plugins.filter(
+    (plugin) => plugin.priority === "high"
+  );
+  const normalPriorityPlugins = globalOptions.plugins.filter(
+    (plugin) => plugin.priority === "normal"
+  );
+  const lowPriorityPlugins = globalOptions.plugins.filter(
+    (plugin) => plugin.priority === "low"
+  );
 
-  const mainHooks = globalOptions.plugins.map((plugin) => plugin.main);
-  mainHooks.forEach((mainFn) => {
-    const result = mainFn && mainFn(globalOptions.context);
-    if (typeof result === "function") {
-      mainEffects.push(result);
-    }
-  });
-  if(NODE_ENV === "development") {
+  const loadPlugins = (plugins: ReturnType<DarePlugin>[]) => {
+    const beforeHooks = plugins.map((plugin) => plugin.before);
+    beforeHooks.forEach((beforeFn) => {
+      beforeFn && beforeFn(globalOptions.context);
+    });
+
+    const mainHooks = plugins.map((plugin) => plugin.main);
+    mainHooks.forEach((mainFn) => {
+      const result = mainFn && mainFn(globalOptions.context);
+      if (typeof result === "function") {
+        mainEffects.push(result);
+      }
+    });
+  }
+
+  loadPlugins(highPriorityPlugins);
+  loadPlugins(normalPriorityPlugins);
+  loadPlugins(lowPriorityPlugins);
+  
+
+  if (NODE_ENV === "development") {
     // @ts-expect-error
     window.mainEffects = mainEffects;
   }

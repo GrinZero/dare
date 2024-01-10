@@ -1,5 +1,10 @@
 import "./App.css";
-import { init, errorPlugin, reportPlugin } from "@dare/web-sdk/dev";
+import {
+  init,
+  errorPlugin,
+  reportPlugin,
+  webVitalsPlugin,
+} from "@dare/web-sdk/dev";
 
 init({
   plugins: [
@@ -7,6 +12,7 @@ init({
       url: "http://localhost:3000/api/report",
     }),
     errorPlugin(),
+    webVitalsPlugin(),
   ],
 });
 
