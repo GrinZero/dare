@@ -18,7 +18,9 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
     }
     errorSet.add(obj);
   };
+
   return {
+    version: "0.0.1",
     main: (context) => {
       const handleError = (data: ErrorEvent) => {
         if (errorSet.has(data.error)) {
@@ -26,21 +28,18 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
         }
         add(data.error);
         options.onError && options.onError(data);
-        
+
         context.core.report({
           type: "error",
           data: {
             message: data.message,
             stack: data.error.stack,
+            env: context.core.getEnv(),
           },
         });
       };
       const handleReject = (event: PromiseRejectionEvent) => {
         const { reason } = event;
-        if (errorSet.has(reason)) {
-          return;
-        }
-        add(reason);
         handleError(
           new ErrorEvent("unhandledrejection", {
             message: reason,
@@ -48,6 +47,18 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
           })
         );
       };
+
+      // const fetchFn = window.fetch;
+      // window.fetch = (...args) => {
+      //   return fetchFn(...args).catch((error) => {
+      //     const errorEvt = new ErrorEvent("unhandledrejection", {
+      //       message: error,
+      //       error,
+      //     });
+      //     handleError(errorEvt);
+      //     throw error;
+      //   });
+      // };
 
       window.addEventListener("error", handleError);
       window.addEventListener("unhandledrejection", handleReject);

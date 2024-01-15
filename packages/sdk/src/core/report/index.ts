@@ -1,5 +1,5 @@
 import { fetchFn, safeFetchFn } from "./fetcher";
-import { LocalDB } from "./storage";
+import { LocalDB } from "@sdk/utils";
 import type { DarePlugin } from "../../type";
 
 export type ReportPluginOptions = {
@@ -60,6 +60,7 @@ export const reportPlugin: DarePlugin<ReportPluginOptions> = (_options) => {
   };
 
   return {
+    version: "0.0.1",
     before: (context) => {
       context.core.report = reporter;
       context.core.sendBean = send;

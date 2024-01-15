@@ -3,11 +3,13 @@ import {
   init,
   errorPlugin,
   reportPlugin,
+  envPlugin,
   webVitalsPlugin,
 } from "@dare/web-sdk/dev";
 
 init({
   plugins: [
+    envPlugin(),
     reportPlugin({
       url: "http://localhost:3000/api/report",
     }),

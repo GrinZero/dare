@@ -11,6 +11,7 @@ export const webVitalsPlugin: DarePlugin<WebVitalsPluginOptions> = (
   Object.assign(options, _options);
 
   return {
+    version: "0.0.1",
     main: (context) => {
       const FCPBbsercer = new PerformanceObserver((list) => {
         for (const entry of list.getEntriesByName("first-contentful-paint")) {
