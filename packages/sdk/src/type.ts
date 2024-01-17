@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types */
+
+import { ReportPluginOptions } from "./core/report";
+
 export type DareContext = {
   [key: string]: unknown;
   state: Record<string, unknown>;
   core: {
     report: (msg: unknown) => Promise<unknown>;
     sendBean: (msg: unknown) => Promise<unknown> | unknown;
+    reporter: DarePluginInstance<unknown, ReportPluginOptions>;
     getEnv: () => EnvData;
   };
 };
@@ -15,19 +19,20 @@ type HasRequiredProps<T> = keyof {
   ? false
   : true;
 
-type DarePluginInstance<R> = {
+type DarePluginInstance<R, Op> = {
   before?: (context: DareContext) => R;
   main?: (context: DareContext) => R | (() => void);
   priority?: "high" | "normal" | "low";
   version: string;
+  options?: Op;
 };
 
 export type DarePlugin<
   Op extends object = object,
   R = unknown,
 > = HasRequiredProps<Op> extends true
-  ? (options: Op) => DarePluginInstance<R>
-  : (options?: Op) => DarePluginInstance<R>;
+  ? (options: Op) => DarePluginInstance<R, Op>
+  : (options?: Op) => DarePluginInstance<R, Op>;
 
 export type EnvData = {
   userAgent: string; // 浏览器用户代理字符串

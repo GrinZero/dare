@@ -1,21 +1,11 @@
 import "./App.css";
-import {
-  init,
-  errorPlugin,
-  reportPlugin,
-  envPlugin,
-  webVitalsPlugin,
-} from "@dare/web-sdk/dev";
+import { init, errorPlugin, webVitalsPlugin } from "@dare/web-sdk/dev";
 
 init({
-  plugins: [
-    envPlugin(),
-    reportPlugin({
-      url: "http://localhost:3000/api/report",
-    }),
-    errorPlugin(),
-    webVitalsPlugin(),
-  ],
+  reporter: {
+    url: "http://localhost:3000/api/report",
+  },
+  plugins: [errorPlugin(), webVitalsPlugin()],
 });
 
 function App() {

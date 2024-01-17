@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/ban-ts-comment */
 import type { DarePlugin, DareContext } from "./type";
-import { envPlugin } from "./core/env";
+import { envPlugin, reportPlugin } from "./core";
 
 // @ts-expect-error
 const NODE_ENV = import.meta.env.MODE;
 
 export type InitOptions = {
   plugins: ReturnType<DarePlugin>[];
-  envCoreOptions?: Parameters<typeof envPlugin>[0];
+  reporter: Parameters<typeof reportPlugin>[0];
+  envOptions?: Parameters<typeof envPlugin>[0];
 };
 export type DareOptions = {
   context: DareContext;
@@ -42,15 +43,17 @@ export const init = (options: InitOptions) => {
 
   globalOptions = initOptions();
 
-  const { plugins:optionPlugins, envCoreOptions } = options;
+  const { plugins: optionPlugins, envOptions, reporter } = options;
   Object.assign(globalOptions, {
     plugins: optionPlugins,
   });
 
   const plugins = globalOptions.plugins;
 
-  const envPluginInstance = envPlugin(envCoreOptions);
-  plugins.unshift(envPluginInstance);
+  const reportPluginInstance = reportPlugin(reporter);
+  const envPluginInstance = envPlugin(envOptions);
+  plugins.unshift(reportPluginInstance, envPluginInstance);
+  globalOptions.context.core.reporter = reportPluginInstance;
 
   const highPriorityPlugins = globalOptions.plugins.filter(
     (plugin) => plugin.priority === "high"

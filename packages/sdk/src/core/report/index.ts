@@ -69,5 +69,6 @@ export const reportPlugin: DarePlugin<ReportPluginOptions> = (_options) => {
       storage && reportStorage();
     },
     priority: "high",
+    options,
   };
 };
