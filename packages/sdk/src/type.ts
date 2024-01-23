@@ -6,7 +6,10 @@ export type DareContext = {
   [key: string]: unknown;
   state: Record<string, unknown>;
   core: {
-    report: (msg: unknown) => Promise<unknown>;
+    sessionID: string;
+    report: (
+      msg: { type: string; data?: unknown } & Record<string, unknown>
+    ) => Promise<unknown>;
     sendBean: (msg: unknown) => Promise<unknown> | unknown;
     reporter: DarePluginInstance<unknown, ReportPluginOptions>;
     getEnv: () => EnvData;
@@ -22,6 +25,7 @@ type HasRequiredProps<T> = keyof {
 type DarePluginInstance<R, Op> = {
   before?: (context: DareContext) => R;
   main?: (context: DareContext) => R | (() => void);
+  after?: (context: DareContext) => R;
   priority?: "high" | "normal" | "low";
   version: string;
   options?: Op;

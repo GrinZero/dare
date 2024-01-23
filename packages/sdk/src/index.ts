@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/ban-ts-comment */
 import type { DarePlugin, DareContext } from "./type";
 import { envPlugin, reportPlugin } from "./core";
+// import { randomUUID } from "crypto-js/";
 
 // @ts-expect-error
 const NODE_ENV = import.meta.env.MODE;
@@ -50,6 +51,10 @@ export const init = (options: InitOptions) => {
 
   const plugins = globalOptions.plugins;
 
+  globalOptions.context.core.sessionID =
+    "crypto" in window
+      ? crypto.randomUUID()
+      : `S` + Math.random().toString(36).slice(2);
   const reportPluginInstance = reportPlugin(reporter);
   const envPluginInstance = envPlugin(envOptions);
   plugins.unshift(reportPluginInstance, envPluginInstance);
@@ -77,6 +82,11 @@ export const init = (options: InitOptions) => {
       if (typeof result === "function") {
         mainEffects.push(result);
       }
+    });
+
+    const afterHooks = plugins.map((plugin) => plugin.after);
+    afterHooks.forEach((afterFn) => {
+      afterFn && afterFn(globalOptions.context);
     });
   };
 

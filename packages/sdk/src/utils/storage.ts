@@ -25,14 +25,38 @@ export class LocalDB {
     });
   }
 
-  public async set(value: unknown) {
+  set(key: string, value: unknown): Promise<void>;
+  set(value: unknown): Promise<string>;
+  public async set(keyOrValue: string | unknown, value?: unknown) {
     const idb = await this.db;
+    if (typeof keyOrValue === "string" && value !== undefined) {
+      return new Promise<void>((resolve, reject) => {
+        const transaction = idb.transaction([this.storeName], "readwrite");
+        const store = transaction.objectStore(this.storeName);
+        store.put({ id: keyOrValue, value: value });
+        transaction.oncomplete = () => {
+          resolve();
+        };
+        transaction.onerror = () => {
+          reject();
+        };
+      });
+    }
+
     return new Promise<string>((resolve, reject) => {
-      const valueStr = JSON.stringify(value);
+      const valueStr = JSON.stringify(keyOrValue, (k, v) => {
+        if (v instanceof Function) {
+          return v.toString();
+        }
+        if (k[0] === "_") {
+          return undefined;
+        }
+        return v;
+      });
       const id = md5(valueStr).toString();
       const transaction = idb.transaction([this.storeName], "readwrite");
       const store = transaction.objectStore(this.storeName);
-      store.put({ id, value });
+      store.put({ id, value: keyOrValue });
       transaction.oncomplete = () => {
         resolve(id);
       };
@@ -42,9 +66,12 @@ export class LocalDB {
     });
   }
 
-  public async get(id: string) {
+  public async get<T = unknown>(id: string) {
     const idb = await this.db;
-    return new Promise((resolve, reject) => {
+    return new Promise<{
+      id: string;
+      value: T;
+    }>((resolve, reject) => {
       const transaction = idb.transaction([this.storeName], "readonly");
       const store = transaction.objectStore(this.storeName);
       const request = store.get(id);
@@ -105,6 +132,29 @@ export class LocalDB {
       transaction.oncomplete = () => {
         resolve(null);
       };
+      transaction.onerror = () => {
+        reject(null);
+      };
+    });
+  }
+
+  public async pushToArray(key: string, value: unknown) {
+    const idb = await this.db;
+    return new Promise<void>((resolve, reject) => {
+      const transaction = idb.transaction([this.storeName], "readwrite");
+      const store = transaction.objectStore(this.storeName);
+      const request = store.get(key);
+
+      request.onsuccess = () => {
+        const data = request.result ? request.result.value : [];
+        data.push(value);
+
+        store.put({ id: key, value: data });
+        transaction.oncomplete = () => {
+          resolve();
+        };
+      };
+
       transaction.onerror = () => {
         reject(null);
       };
