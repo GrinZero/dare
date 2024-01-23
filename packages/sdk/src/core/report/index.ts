@@ -47,14 +47,30 @@ export const reportPlugin: DarePlugin<ReportPluginOptions> = (_options) => {
       });
     }
   };
+
   const send = (msg: unknown) => {
     return safeFetchFn(options.url, msg);
   };
 
+  let storageStatus = "done";
   const reportStorage = async () => {
-    const msg = await storage!.pop();
-    if (msg) {
+    if (storageStatus === "pending") return;
+    storageStatus = "pending";
+    let msg = await storage!.pop();
+    while (msg !== null) {
       await reporter(msg.value);
+      msg = await storage!.pop();
+    }
+    storageStatus = "done";
+  };
+
+  const reporterOnce = async (msg: unknown) => {
+    try {
+      const id = storage ? await storage.set(msg) : "";
+      const result = await fetchFn(options.url, msg);
+      storage && (await storage.delete(id));
+      return result;
+    } catch (error) {
       reportStorage();
     }
   };
@@ -62,7 +78,7 @@ export const reportPlugin: DarePlugin<ReportPluginOptions> = (_options) => {
   return {
     version: "0.0.1",
     before: (context) => {
-      context.core.report = reporter;
+      context.core.report = reporterOnce;
       context.core.sendBean = send;
     },
     main: () => {

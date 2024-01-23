@@ -9,12 +9,10 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
   const options: ErrorPluginOptions = {};
   Object.assign(options, _options);
 
-  const SetConstructor: WeakSetConstructor | SetConstructor =
-    window.WeakSet || window.Set;
-  const errorSet: WeakSet<object> | Set<object> = new SetConstructor<object>();
+  const errorSet = new Set();
 
-  const add = (obj: object) => {
-    if (errorSet instanceof Set && errorSet.size > 100) {
+  const add = (obj: unknown) => {
+    if (errorSet.size > 100) {
       errorSet.clear();
     }
     errorSet.add(obj);
@@ -26,11 +24,11 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
       const url = context.core.reporter.options?.url;
 
       const handleError = (data: ErrorEvent) => {
-        if (errorSet.has(data.error)) {
+        if (errorSet.has(data.error?.stack ?? data.error)) {
           // 如果是上报错误或者已经处理过的错误，则不再处理
           return;
         }
-        add(data.error);
+        add(data.error?.stack ?? data.error);
         options.onError && options.onError(data);
 
         context.core.report({

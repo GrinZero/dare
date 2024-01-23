@@ -29,7 +29,6 @@ export const memoryPlugin: DarePlugin<MemoryPluginOptions> = (options = {}) => {
             env: (await localDB.get(`${memoryUsages.id}-env`)).value,
             sessionID: memoryUsages.id,
           };
-          console.log("data", data);
           context.core.report({
             type: "memory",
             data,
