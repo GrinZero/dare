@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/ban-ts-comment */
-import type { DarePlugin, DareContext } from "./type";
-import { envPlugin, reportPlugin } from "./core";
-// import { randomUUID } from "crypto-js/";
+import type { DarePlugin, DareContext } from './type';
+import { envPlugin, reportPlugin } from './core';
 
 // @ts-expect-error
 const NODE_ENV = import.meta.env.MODE;
@@ -22,10 +21,10 @@ const initOptions = () => {
       state: {},
       core: {
         report: async () => {
-          console.warn("report is not init");
+          console.warn('report is not init');
         },
         sendBean: () => {
-          console.warn("sendBean is not init");
+          console.warn('sendBean is not init');
         },
       },
     },
@@ -37,9 +36,9 @@ export let globalOptions: DareOptions = initOptions();
 
 const mainEffects: Function[] =
   // @ts-expect-error
-  NODE_ENV === "development" ? window.mainEffects || [] : [];
+  NODE_ENV === 'development' ? window.mainEffects || [] : [];
 
-export const init = (options: InitOptions) => {
+export const defineConfig = async (options: InitOptions) => {
   mainEffects.forEach((fn) => fn());
 
   globalOptions = initOptions();
@@ -52,7 +51,7 @@ export const init = (options: InitOptions) => {
   const plugins = globalOptions.plugins;
 
   globalOptions.context.core.sessionID =
-    "crypto" in window
+    'crypto' in window
       ? crypto.randomUUID()
       : `S` + Math.random().toString(36).slice(2);
   const reportPluginInstance = reportPlugin(reporter);
@@ -61,44 +60,49 @@ export const init = (options: InitOptions) => {
   globalOptions.context.core.reporter = reportPluginInstance;
 
   const highPriorityPlugins = globalOptions.plugins.filter(
-    (plugin) => plugin.priority === "high"
+    (plugin) => plugin.priority === 'high',
   );
   const normalPriorityPlugins = globalOptions.plugins.filter(
-    (plugin) => plugin.priority === "normal"
+    (plugin) => plugin.priority === 'normal',
   );
   const lowPriorityPlugins = globalOptions.plugins.filter(
-    (plugin) => plugin.priority === "low" || !plugin.priority
+    (plugin) => plugin.priority === 'low' || !plugin.priority,
   );
 
-  const loadPlugins = (plugins: ReturnType<DarePlugin>[]) => {
+  const loadPlugins = async (plugins: ReturnType<DarePlugin>[]) => {
     const beforeHooks = plugins.map((plugin) => plugin.before);
-    beforeHooks.forEach((beforeFn) => {
-      beforeFn && beforeFn(globalOptions.context);
-    });
+    for (const beforeFn of beforeHooks) {
+      beforeFn && (await beforeFn(globalOptions.context));
+    }
 
     const mainHooks = plugins.map((plugin) => plugin.main);
-    mainHooks.forEach((mainFn) => {
-      const result = mainFn && mainFn(globalOptions.context);
-      if (typeof result === "function") {
+    for (const mainFn of mainHooks) {
+      const result = mainFn && (await mainFn(globalOptions.context));
+      if (typeof result === 'function') {
         mainEffects.push(result);
       }
-    });
+    }
 
     const afterHooks = plugins.map((plugin) => plugin.after);
-    afterHooks.forEach((afterFn) => {
-      afterFn && afterFn(globalOptions.context);
-    });
+    for (const afterFn of afterHooks) {
+      afterFn && (await afterFn(globalOptions.context));
+    }
   };
 
-  loadPlugins(highPriorityPlugins);
-  loadPlugins(normalPriorityPlugins);
-  loadPlugins(lowPriorityPlugins);
+  await loadPlugins(highPriorityPlugins);
+  await loadPlugins(normalPriorityPlugins);
+  await loadPlugins(lowPriorityPlugins);
 
-  if (NODE_ENV === "development") {
+  if (NODE_ENV === 'development') {
     // @ts-expect-error
     window.mainEffects = mainEffects;
   }
 };
 
-export * from "./core";
-export * from "./plugins";
+export * from './core';
+export * from './plugins';
+
+if (process.env.NODE_ENV === 'development') {
+  // @ts-expect-error
+  window.clearAll = () => {};
+}

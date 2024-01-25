@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { ReportPluginOptions } from "./core/report";
+import { ReportPluginOptions } from './core/report';
+import type { LocalDB } from './utils';
 
 export type DareContext = {
   [key: string]: unknown;
   state: Record<string, unknown>;
   core: {
+    storage: LocalDB | null;
     sessionID: string;
     report: (
-      msg: { type: string; data?: unknown } & Record<string, unknown>
+      msg: { type: string; data?: unknown } & Record<string, unknown>,
     ) => Promise<unknown>;
     sendBean: (msg: unknown) => Promise<unknown> | unknown;
     reporter: DarePluginInstance<unknown, ReportPluginOptions>;
@@ -23,20 +25,18 @@ type HasRequiredProps<T> = keyof {
   : true;
 
 type DarePluginInstance<R, Op> = {
-  before?: (context: DareContext) => R;
-  main?: (context: DareContext) => R | (() => void);
-  after?: (context: DareContext) => R;
-  priority?: "high" | "normal" | "low";
+  before?: (context: DareContext) => R | Promise<R>;
+  main?: (context: DareContext) => R | (() => void) | Promise<R> | Promise<() => void>;
+  after?: (context: DareContext) => R | Promise<R>;
+  priority?: 'high' | 'normal' | 'low';
   version: string;
   options?: Op;
 };
 
-export type DarePlugin<
-  Op extends object = object,
-  R = unknown,
-> = HasRequiredProps<Op> extends true
-  ? (options: Op) => DarePluginInstance<R, Op>
-  : (options?: Op) => DarePluginInstance<R, Op>;
+export type DarePlugin<Op extends object = object, R = unknown> =
+  HasRequiredProps<Op> extends true
+    ? (options: Op) => DarePluginInstance<R, Op>
+    : (options?: Op) => DarePluginInstance<R, Op>;
 
 export type EnvData = {
   userAgent: string; // 浏览器用户代理字符串

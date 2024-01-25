@@ -99,9 +99,9 @@ export class LocalDB {
     });
   }
 
-  public async pop() {
+  public async pop<T>() {
     const idb = await this.db;
-    return new Promise<{ id: string; value: unknown } | null>(
+    return new Promise<{ id: string; value: T } | null>(
       (resolve, reject) => {
         const transaction = idb.transaction([this.storeName], "readwrite");
         const store = transaction.objectStore(this.storeName);

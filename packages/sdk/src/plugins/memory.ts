@@ -1,9 +1,15 @@
-import type { DarePlugin, DareContext } from "../type";
-import { LocalDB } from "../utils"; // 引入 LocalDB 类
+import type { DarePlugin, DareContext } from '../type';
+import { LocalDB } from '../utils'; // 引入 LocalDB 类
 
 export type MemoryPluginOptions = {
   interval?: number;
 };
+
+export interface MemoryData {
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
 
 export const memoryPlugin: DarePlugin<MemoryPluginOptions> = (options = {}) => {
   const defaultOptions: MemoryPluginOptions = {
@@ -12,44 +18,53 @@ export const memoryPlugin: DarePlugin<MemoryPluginOptions> = (options = {}) => {
 
   const finalOptions = { ...defaultOptions, ...options };
 
-  const localDB = new LocalDB({ dbName: "MemoryDB", storeName: "memoryUsage" });
-
+  const localDB = new LocalDB({ dbName: 'dare-memory', storeName: 'memory' });
   return {
-    version: "0.0.1",
-    after: async (context: DareContext) => {
+    version: '0.0.1',
+    main: async (context: DareContext) => {
       try {
-        let memoryUsages = await localDB.pop();
+        let memoryUsages = await localDB.pop<
+          {
+            memory: MemoryData;
+            time: number;
+          }[]
+        >();
         while (memoryUsages !== null) {
-          if (memoryUsages.id.endsWith("-env")) {
+          if (memoryUsages.id.endsWith('-env')) {
             memoryUsages = await localDB.pop();
             continue;
           }
+
+          const heapsizelimit = memoryUsages.value[0].memory.jsHeapSizeLimit;
           const data = {
-            memory: memoryUsages.value,
+            memory: memoryUsages.value.map((item) => ({
+              memory: {
+                totalJSHeapSize: item.memory.totalJSHeapSize,
+                usedJSHeapSize: item.memory.usedJSHeapSize,
+              },
+              time: item.time,
+            })),
             env: (await localDB.get(`${memoryUsages.id}-env`)).value,
+            jsHeapSizeLimit: heapsizelimit,
             sessionID: memoryUsages.id,
           };
           context.core.report({
-            type: "memory",
+            type: 'memory',
             data,
           });
           memoryUsages = await localDB.pop();
         }
       } catch (error) {
-        console.error("Error reporting memory usage: ", error);
+        console.error('Error reporting memory usage: ', error);
       }
     },
-    main: (context: DareContext) => {
+    after: (context: DareContext) => {
       const sessionID = context.core.sessionID;
 
       const getMemoryUsage = () => {
-        if ("performance" in window && "memory" in performance) {
+        if ('performance' in window && 'memory' in performance) {
           const { totalJSHeapSize, usedJSHeapSize, jsHeapSizeLimit } =
-            performance.memory as {
-              totalJSHeapSize: number;
-              usedJSHeapSize: number;
-              jsHeapSizeLimit: number;
-            };
+            performance.memory as MemoryData;
           return {
             memory: { totalJSHeapSize, usedJSHeapSize, jsHeapSizeLimit },
             time: Date.now(),
@@ -59,42 +74,57 @@ export const memoryPlugin: DarePlugin<MemoryPluginOptions> = (options = {}) => {
       };
 
       const reportMemoryUsages = async (context: DareContext) => {
-        const memoryUsages = await localDB.get(sessionID);
+        const memoryUsages = await localDB.get<
+          {
+            memory: MemoryData;
+            time: number;
+          }[]
+        >(sessionID);
         const env = await localDB.get(`${sessionID}-env`);
         if (memoryUsages && env) {
+          const heapsizelimit = memoryUsages.value[0].memory.jsHeapSizeLimit;
+          const data = {
+            memory: memoryUsages.value.map((item) => ({
+              memory: {
+                totalJSHeapSize: item.memory.totalJSHeapSize,
+                usedJSHeapSize: item.memory.usedJSHeapSize,
+              },
+              time: item.time,
+            })),
+            env: env.value,
+            jsHeapSizeLimit: heapsizelimit,
+            sessionID,
+          };
+
           context.core.report({
-            type: "memory",
-            data: {
-              memory: memoryUsages.value,
-              env: env.value,
-              sessionID,
-            },
+            type: 'memory',
+            data,
           });
         }
       };
 
-      const intervalId = window.setInterval(async () => {
+      let timeoutId: number | undefined;
+      const measureMemory = () => {
         const memoryUsage = getMemoryUsage();
         if (memoryUsage) {
           localDB.pushToArray(sessionID, memoryUsage);
           localDB.set(`${sessionID}-env`, context.core.getEnv());
         }
-      }, finalOptions.interval);
+        const interval = -Math.log(Math.random()) * finalOptions.interval!;
+        timeoutId = window.setTimeout(measureMemory, interval);
+      };
+
+      measureMemory();
 
       const done = () => {
         reportMemoryUsages(context);
       };
 
-      window.addEventListener("beforeunload", done);
-
-      // 可以添加其他触发上报的逻辑
+      window.addEventListener('beforeunload', done);
 
       return () => {
-        if (intervalId !== undefined) {
-          clearInterval(intervalId);
-        }
-        window.removeEventListener("beforeunload", done);
-        // 清理其他事件监听器
+        clearTimeout(timeoutId);
+        window.removeEventListener('beforeunload', done);
       };
     },
   };

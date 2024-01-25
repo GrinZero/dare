@@ -1,7 +1,7 @@
 import "./App.css";
-import { init, errorPlugin, memoryPlugin } from "@dare/web-sdk/dev";
+import { defineConfig, errorPlugin, memoryPlugin } from "@dare/web-sdk/dev";
 
-init({
+defineConfig({
   reporter: {
     url: "http://localhost:3000/api/report",
   },
