@@ -36,7 +36,6 @@
     "vitest": "^1.1.0"
   },
   "dependencies": {
-    "crypto-js": "^4.2.0",
-    "idb": "^8.0.0"
+    "crypto-js": "^4.2.0"
   }
 }
