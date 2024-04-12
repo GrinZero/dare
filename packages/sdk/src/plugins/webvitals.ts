@@ -52,6 +52,7 @@ export const webVitalsPlugin: DarePlugin<WebVitalsPluginOptions> = (
         FIDObserver.disconnect();
       };
     },
+    effects: [],
     priority: "high",
   };
 };

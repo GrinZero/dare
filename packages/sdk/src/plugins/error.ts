@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,prefer-rest-params */
-import type { DarePlugin } from "../type";
+import type { DarePlugin } from '../type';
 
 export type ErrorPluginOptions = {
   onError?: (error: ErrorEvent) => void;
@@ -18,8 +18,10 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
     errorSet.add(obj);
   };
 
+  const effects: Function[] = [];
+
   return {
-    version: "0.0.1",
+    version: '0.0.1',
     main: (context) => {
       const url = context.core.reporter.options?.url;
 
@@ -32,7 +34,7 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
         options.onError && options.onError(data);
 
         context.core.report({
-          type: "error",
+          type: 'error',
           data: {
             message: data.message,
             stack: data.error.stack,
@@ -43,10 +45,10 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
       const handleReject = (event: PromiseRejectionEvent) => {
         const { reason } = event;
         handleError(
-          new ErrorEvent("unhandledrejection", {
+          new ErrorEvent('unhandledrejection', {
             message: reason,
             error: reason,
-          })
+          }),
         );
       };
 
@@ -56,18 +58,18 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
         const args = arguments as any;
         const fn = (error: ProgressEvent<XMLHttpRequestEventTarget>) => {
           if (args[0] === url) {
-            this.removeEventListener("error", fn)
+            this.removeEventListener('error', fn);
             return;
           }
           handleError(
-            new ErrorEvent("xhrerror", {
-              message: "XMLHttpRequest request failed",
+            new ErrorEvent('xhrerror', {
+              message: 'XMLHttpRequest request failed',
               error,
-            })
+            }),
           );
-          this.removeEventListener("error", fn);
+          this.removeEventListener('error', fn);
         };
-        this.addEventListener("error", fn);
+        this.addEventListener('error', fn);
         originalXHRSend.apply(this, args);
       };
 
@@ -78,23 +80,24 @@ export const errorPlugin: DarePlugin<ErrorPluginOptions> = (_options) => {
             throw error;
           }
           handleError(
-            new ErrorEvent("fetcherror", {
-              message: "Fetch request failed",
+            new ErrorEvent('fetcherror', {
+              message: 'Fetch request failed',
               error,
-            })
+            }),
           );
           throw error; // 重新抛出以确保不会打破 Promise 链
         });
       };
 
-      window.addEventListener("error", handleError);
-      window.addEventListener("unhandledrejection", handleReject);
-      return () => {
-        window.removeEventListener("error", handleError);
-        window.removeEventListener("unhandledrejection", handleReject);
+      window.addEventListener('error', handleError);
+      window.addEventListener('unhandledrejection', handleReject);
+      effects.push(() => {
+        window.removeEventListener('error', handleError);
+        window.removeEventListener('unhandledrejection', handleReject);
         XMLHttpRequest.prototype.send = originalXHRSend;
         window.fetch = originalFetch;
-      };
+      });
     },
+    effects,
   };
 };

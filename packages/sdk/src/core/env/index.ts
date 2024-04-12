@@ -1,4 +1,4 @@
-import type { DarePlugin, EnvData } from "@sdk/type";
+import type { DarePlugin, EnvData } from '@sdk/type';
 
 export type EnvPluginOptions = {
   formater?: <T extends EnvData>(msg: T) => Record<string, unknown>;
@@ -32,9 +32,10 @@ export const envPlugin: DarePlugin<EnvPluginOptions> = () => {
   };
 
   return {
-    version: "0.0.1",
+    version: '0.0.1',
     before: (context) => {
       context.core.getEnv = getEnvData;
     },
+    effects: [],
   };
 };

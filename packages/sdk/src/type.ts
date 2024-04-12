@@ -24,13 +24,26 @@ type HasRequiredProps<T> = keyof {
   ? false
   : true;
 
-type DarePluginInstance<R, Op> = {
+export type DarePluginInstance<R, Op> = {
   before?: (context: DareContext) => R | Promise<R>;
-  main?: (context: DareContext) => R | (() => void) | Promise<R> | Promise<() => void>;
+  main?: (
+    context: DareContext,
+  ) => R | (() => void) | Promise<R> | Promise<() => void>;
   after?: (context: DareContext) => R | Promise<R>;
   priority?: 'high' | 'normal' | 'low';
   version: string;
   options?: Op;
+  /**
+   * 插件的副作用清理函数
+   */
+  effects: Function[];
+  onLoad?: (context: DareContext) => void;
+  onHidden?: (context: DareContext) => void;
+  onShow?: (context: DareContext) => void;
+  onReady?: (context: DareContext) => void;
+  onResize?: (context: DareContext) => void;
+  onUnload?: (context: DareContext) => void;
+  onNavigate?: (context: DareContext) => void;
 };
 
 export type DarePlugin<Op extends object = object, R = unknown> =

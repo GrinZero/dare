@@ -87,5 +87,6 @@ export const reportPlugin: DarePlugin<ReportPluginOptions> = (_options) => {
     },
     priority: 'high',
     options,
+    effects: [],
   };
 };

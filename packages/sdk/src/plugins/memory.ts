@@ -19,6 +19,7 @@ export const memoryPlugin: DarePlugin<MemoryPluginOptions> = (options = {}) => {
   const finalOptions = { ...defaultOptions, ...options };
 
   const localDB = new LocalDB({ dbName: 'dare-memory', storeName: 'memory' });
+  const effects: Function[] = [];
   return {
     version: '0.0.1',
     main: async (context: DareContext) => {
@@ -122,10 +123,11 @@ export const memoryPlugin: DarePlugin<MemoryPluginOptions> = (options = {}) => {
 
       window.addEventListener('beforeunload', done);
 
-      return () => {
+      effects.push(() => {
         clearTimeout(timeoutId);
         window.removeEventListener('beforeunload', done);
-      };
+      });
     },
+    effects,
   };
 };
